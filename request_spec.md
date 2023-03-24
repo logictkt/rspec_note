@@ -2,44 +2,40 @@
 
 ## テンプレ
 ```rb
-RSpec.describe 'Follows' do
-  desctibe '未ログインの場合' do
-    describe 'index' do
-      it 'アクセスできないこと' do
-        visit follows_path
-        expect(response).to redirect_to root_path
-        # or
-        expect(response.status).to eq(403)
-      end
+RSpec.describe 'Books' do
+  describe 'index' do
+    it do
+      visit books_path
+      expect(response.status).to eq(200)
     end
   end
 
-  desctibe 'ログイン済みの場合' do
-    let(:login_user) { create(:user, :with_auth) }
-    let(:follow_user) { create(:user, :with_auth, name: 'John') }
-
-    before { login(login_user, no_capybara: true) }
-
-    describe 'index' do
-      before { create(:artist_follow, artist:, user: follow_user) }
-
-      it do
-        visit follows_path
-        expect(response.body).to include('John')
-      end
+  describe 'create' do
+    desctibe '未ログインの場合' do
+      it 'アクセスできないこと' { }
     end
 
-    describe 'create' do
-      it do
-        expect { post follow_path(follow_user) }.to change(Follow, :count).by(1)
+    desctibe 'ログイン済みの場合' do
+      before do
+        login(create(:user), no_capybara: true)
+
+        # 単純な controller なら別にモックしないが、複雑な処理が行われる場合は、そこをテストをするわけでないのでモックする
+        allow_any_instance_of(Book).to receive(:save).and_return(true)
       end
-    end
 
-    describe 'destroy' do
-      before { create(:artist_follow, artist:, user: follow_user) }
+      context '保存成功' do
+        it do
+          post book_path, params: { title: 'xxx' }
+          expect(response).to redirect_to book_path
+          expect(Book).to have_received(:save).once # モックする場合コールされたかを検証する
+        end
+      end
 
-      it do
-        expect { delete follow_path(follow_user) }.to change(Follow, :count).by(-1)
+      context '保存失敗' do
+        it do
+          post book_path, params: { title: '' }
+          expect(response.body).to include('Book has 1 error.') # render :new されることを検証するので new であることを示す内容
+        end
       end
     end
   end
@@ -48,7 +44,8 @@ end
 
 
 ## 対象
-リクエストが正しく処理されたかをテストする
+リクエストが正しく処理されたかをテストする  
+request に対する応答をテストするので、以下のチェック内容に限定してテストすると見通しがよい
 
 
 ## チェック内容
@@ -68,32 +65,6 @@ end
 
 
 ### 例
-index, show などで正しくデータが渡されているか
-
-```rb
-def show
-  @book = Book.find(params[:id])
-end
-```
-
-```haml
-%h1= @book.title
-```
-
-```rb
-describe 'show' do
-  let!(:book) { create(:book, title: 'Hoge') }
-
-  it do
-    get book_path(book)
-    expect(response).to have_http_status(200)
-    expect(response.body).to include 'Hoge'
-  end
-end
-```
-
-
-### 例 2
 create, update などで正しくデータが保存されるか
 
 ```rb
