@@ -7,3 +7,5 @@ rspec を書くときに気をつけていることをつらつらとメモし�
 * [request spec](request_spec.md)
 * [model spec](model_spec.md)
 * [system spec](system_spec.md)
+* [view spec](view_spec.md)
+* [mailer spec](mailer_spec.md)
